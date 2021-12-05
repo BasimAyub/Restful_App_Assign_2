@@ -5,6 +5,9 @@ var assignmentM = require("../Models/assignment");
 var materialM = require("../Models/material");
 var studentM = require("../Models/student");
 var teacherM = require("../Models/teacher");
+var headM = require("../Models/head");
+var QuizAttemptM = require("../Models/QuizAttempt");
+var AssignmentAttemptM = require("../Models/AssignmentAttempt");
 
 /* GET Operations */
 module.exports.adminController = function (req, res, next) {
@@ -51,6 +54,19 @@ module.exports.adminTeachersController = function (req, res, next) {
 		});
 };
 
+module.exports.adminHeadsController = function (req, res, next) {
+	headM
+		.find()
+		.sort("name")
+		.exec(function (error, results) {
+			if (error) {
+				return next(error);
+			}
+			// Respond with valid data
+			res.json(results);
+		});
+};
+
 module.exports.adminQuizController = function (req, res, next) {
 	quizM.find().exec(function (error, results) {
 		if (error) {
@@ -82,13 +98,15 @@ module.exports.adminMaterialController = function (req, res, next) {
 };
 
 module.exports.View_Attempted_Quiz = function (req, res, next) {
-	quizM.find().exec(function (error, results) {
-		if (error) {
-			return next(error);
-		}
-		// Respond with valid data
-		res.json(results);
-	});
+	QuizAttemptM.find()
+		.populate("student")
+		.exec(function (error, results) {
+			if (error) {
+				return next(error);
+			}
+			// Respond with valid data
+			res.json(results);
+		});
 };
 
 module.exports.View_Attempted_Assignment = function (req, res, next) {
@@ -297,7 +315,7 @@ module.exports.assignStudent_toClass_Controller = function (req, res, next) {
 		{ _id: req.params.cid },
 		{
 			$push: {
-				students: {
+				classStudents: {
 					_id: req.params.sid,
 				},
 			},
@@ -331,59 +349,46 @@ module.exports.assignClass_toTeacher_Controller = function (req, res, next) {
 
 //assign quiz to class
 module.exports.assignQuiz_toClass_Controller = function (req, res, next) {
-	classM
-		.find({ _id: req.params.cid })
-		.lean()
-		.exec(function (error, records) {
+	classM.findOneAndUpdate(
+		{ _id: req.params.cid },
+		{
+			$push: {
+				classQuiz: {
+					_id: req.params.qid,
+				},
+			},
+		},
+		{ new: true, upsert: false },
+		function (error, results) {
 			if (error) {
 				return next(error);
 			}
-			records.forEach(function (record) {
-				console.log("Checking for class " + record._id);
-				console.log("Students in class are " + record.students.length);
-				for (var i = 0; i < record.students.length; i++) {
-					console.log("Checking for student " + record.students[i]._id);
-					studentM.findOneAndUpdate(
-						{ _id: record.students[i]._id },
-						{ quiz: req.params.qid },
-						{ new: true, upsert: false },
-						function (error, results) {
-							if (error) {
-								return next(error);
-							}
-						}
-					);
-				}
-			});
-			res.json(records);
-		});
+			// Respond with valid data
+			res.json(results);
+		}
+	);
 };
 
 //assign assignment to class
 module.exports.assignAssignment_toClass_Controller = function (req, res, next) {
-	classM
-		.find({ _id: req.params.cid })
-		.lean()
-		.exec(function (error, records) {
+	classM.findOneAndUpdate(
+		{ _id: req.params.cid },
+		{
+			$push: {
+				classAssignment: {
+					_id: req.params.aid,
+				},
+			},
+		},
+		{ new: true, upsert: false },
+		function (error, results) {
 			if (error) {
 				return next(error);
 			}
-			records.forEach(function (record) {
-				for (var i = 0; i < record.students.length; i++) {
-					studentM.findOneAndUpdate(
-						{ _id: record.students[i]._id },
-						{ assignment: req.params.aid },
-						{ new: true, upsert: false },
-						function (error) {
-							if (error) {
-								return next(error);
-							}
-						}
-					);
-				}
-			});
-			res.json(records);
-		});
+			// Respond with valid data
+			res.json(results);
+		}
+	);
 };
 
 //assign marks to quiz
@@ -400,32 +405,6 @@ module.exports.assignMarks_toQuiz_Controller = function (req, res, next) {
 			res.json(results);
 		}
 	);
-};
-
-//assign marks to student
-module.exports.assignMarks_toStudent_Controller = function (req, res, next) {
-	studentM
-		.find({ _id: req.params.sid })
-		.lean()
-		.exec(function (error, records) {
-			if (error) {
-				return next(error);
-			}
-			records.forEach(function (record) {
-				for (var i = 0; i < record.students.length; i++) {
-					quizM.findOneAndUpdate(
-						{ obtainedMarks: req.params.num },
-						{ new: true, upsert: false },
-						function (error) {
-							if (error) {
-								return next(error);
-							}
-						}
-					);
-				}
-			});
-			res.json(records);
-		});
 };
 
 //Delete Operations

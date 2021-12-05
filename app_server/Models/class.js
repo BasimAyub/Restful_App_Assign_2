@@ -9,7 +9,7 @@ var classSchema = new Schema({
 		type: mongoose.Types.ObjectId,
 		ref: "Teacher",
 	},
-	students: {
+	classStudents: {
 		type: [
 			{
 				stuid: {
@@ -19,13 +19,27 @@ var classSchema = new Schema({
 			},
 		],
 	},
-	subjects: {
+	classQuiz: {
 		type: [
 			{
-				subid: {
-					type: mongoose.Types.ObjectId,
-					ref: "Subject",
-				},
+				type: mongoose.Types.ObjectId,
+				ref: "Quiz",
+			},
+		],
+	},
+	classAssignment: {
+		type: [
+			{
+				type: mongoose.Types.ObjectId,
+				ref: "Assignment",
+			},
+		],
+	},
+	classMaterial: {
+		type: [
+			{
+				type: mongoose.Types.ObjectId,
+				ref: "Material",
 			},
 		],
 	},

@@ -15,16 +15,9 @@ var assignmentSchema = new Schema({
 	answers: {
 		type: [Number],
 	},
-	studentAnswers: {
-		type: [Number],
-	},
 	totalMarks: {
 		type: Number,
 		required: true,
-	},
-	obtainedMarks: {
-		type: Number,
-		required: false,
 	},
 });
 

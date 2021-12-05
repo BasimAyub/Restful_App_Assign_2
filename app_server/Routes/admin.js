@@ -7,12 +7,13 @@ router.get("/", adminC.adminController);
 router.get("/classes", adminC.adminClassesController);
 router.get("/students", adminC.adminStudentsController);
 router.get("/teachers", adminC.adminTeachersController);
+router.get("/heads", adminC.adminHeadsController);
 router.get("/quiz", adminC.adminQuizController);
 router.get("/assignment", adminC.adminAssignmentController);
 router.get("/material", adminC.adminMaterialController);
 // not implemented
-router.get("/attemptquiz", adminC.View_Attempted_Quiz);
-router.get("/attemptassign", adminC.View_Attempted_Assignment);
+router.get("/attemptedQuiz", adminC.View_Attempted_Quiz);
+router.get("/attemptedAssignment", adminC.View_Attempted_Assignment);
 
 router.get("/class/:id", adminC.Class_Find_With_Id_Controller);
 router.get("/quiz/:id", adminC.Quiz_Find_With_Id_Controller);
@@ -60,11 +61,6 @@ router.put(
 	adminC.assignMarks_toQuiz_Controller
 );
 
-//assign marks to student
-router.put(
-	"/assign/marks/:num/student/:sid",
-	adminC.assignMarks_toStudent_Controller
-);
 //Delete Operations
 router.delete("/delmaterial/:id", adminC.deleteMaterial_Controller);
 router.delete("/delquiz/:id", adminC.deleteQuiz_Controller);

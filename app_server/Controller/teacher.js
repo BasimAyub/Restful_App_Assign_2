@@ -3,6 +3,8 @@ var quizM = require("../Models/quiz");
 var assignmentM = require("../Models/assignment");
 var materialM = require("../Models/material");
 var studentM = require("../Models/student");
+var QuizAttemptM = require("../Models/QuizAttempt");
+var AssignmentAttemptM = require("../Models/AssignmentAttempt");
 
 /* GET Operations */
 module.exports.teacherController = function (req, res, next) {
@@ -10,19 +12,21 @@ module.exports.teacherController = function (req, res, next) {
 };
 
 module.exports.viewAttemptedQuizesController = function (req, res, next) {
-	quizM.find({}).exec(function (error, results) {
-		if (error) {
-			return next(error);
-		}
-		// Respond with valid data
-		res.json(results);
-	});
+	QuizAttemptM.find({ class: req.params.cid })
+		.populate("student")
+		.populate("quiz")
+		.exec(function (error, results) {
+			if (error) {
+				return next(error);
+			}
+			// Respond with valid data
+			res.json(results);
+		});
 };
-
-module.exports.Quiz_Find_With_Id_Controller = function (req, res, next) {
-	quizM
-		.find({ _id: req.params.id })
-		.populate("quizes")
+module.exports.viewAttemptedAssignmentsController = function (req, res, next) {
+	AssignmentAttemptM.find({ class: req.params.cid })
+		.populate("student")
+		.populate("assignment")
 		.exec(function (error, results) {
 			if (error) {
 				return next(error);
@@ -32,14 +36,34 @@ module.exports.Quiz_Find_With_Id_Controller = function (req, res, next) {
 		});
 };
 
-module.exports.Assignment_Find_With_Id_Controller = function (req, res, next) {
-	assignmentM.find({ _id: req.params.id }).exec(function (error, results) {
-		if (error) {
-			return next(error);
-		}
-		// Respond with valid data
-		res.json(results);
-	});
+module.exports.viewAttemptedQuizWithIdController = function (req, res, next) {
+	QuizAttemptM.find({ _id: req.params.aqid })
+		.populate("student")
+		.populate("quiz")
+		.exec(function (error, results) {
+			if (error) {
+				return next(error);
+			}
+			// Respond with valid data
+			res.json(results);
+		});
+};
+
+module.exports.viewAttemptedAssignmentWithIdController = function (
+	req,
+	res,
+	next
+) {
+	AssignmentAttemptM.find({ _id: req.params.aaid })
+		.populate("student")
+		.populate("assignment")
+		.exec(function (error, results) {
+			if (error) {
+				return next(error);
+			}
+			// Respond with valid data
+			res.json(results);
+		});
 };
 
 module.exports.materialController = function (req, res, next) {
@@ -50,10 +74,6 @@ module.exports.materialController = function (req, res, next) {
 		// Respond with valid data
 		res.json(results);
 	});
-};
-
-module.exports.viewAttemptedAssignmentsController = function (req, res, next) {
-	res.send("respond with a resource");
 };
 
 //POST Operations
@@ -120,58 +140,85 @@ module.exports.addMaterial_Controller = function (req, res, next) {
 		.catch((err) => next(err));
 };
 
-//PUT Operations
 module.exports.assignMarks_toStudent_Controller = function (req, res, next) {
-	studentM
-		.find({ _id: req.params.sid })
-		.lean()
-		.exec(function (error, records) {
+	QuizAttemptM.findOneAndUpdate(
+		{ student: req.params.sid },
+		{ marks: req.params.num },
+		{ new: true, upsert: false },
+		function (error, results) {
 			if (error) {
 				return next(error);
 			}
-			records.forEach(function (record) {
-				for (var i = 0; i < record.students.length; i++) {
-					quizM.findOneAndUpdate(
-						{ obtainedMarks: req.params.num },
-						function (error) {
-							if (error) {
-								return next(error);
-							}
-						}
-					);
-				}
-			});
-			res.json(records);
-		});
+			// Respond with valid data
+			res.json(results);
+		}
+	);
 };
 
 //assign quiz to class
 module.exports.assignQuiz_toClass_Controller = function (req, res, next) {
-	classM
-		.find({ _id: req.params.cid })
-		.lean()
-		.exec(function (error, records) {
+	classM.findOneAndUpdate(
+		{ _id: req.params.cid },
+		{
+			$push: {
+				classQuiz: {
+					_id: req.params.qid,
+				},
+			},
+		},
+		{ new: true, upsert: false },
+		function (error, results) {
 			if (error) {
 				return next(error);
 			}
-			records.forEach(function (record) {
-				console.log("Checking for class " + record._id);
-				console.log("Students in class are " + record.students.length);
-				for (var i = 0; i < record.students.length; i++) {
-					console.log("Checking for student " + record.students[i]._id);
-					studentM.findOneAndUpdate(
-						{ _id: record.students[i]._id },
-						{ quiz: req.params.qid },
-						function (error, results) {
-							if (error) {
-								return next(error);
-							}
-						}
-					);
-				}
-			});
-			res.json(records);
-		});
+			// Respond with valid data
+			res.json(results);
+		}
+	);
+};
+
+//assign assignment to class
+module.exports.assignAssignment_toClass_Controller = function (req, res, next) {
+	classM.findOneAndUpdate(
+		{ _id: req.params.cid },
+		{
+			$push: {
+				classAssignment: {
+					_id: req.params.aid,
+				},
+			},
+		},
+		{ new: true, upsert: false },
+		function (error, results) {
+			if (error) {
+				return next(error);
+			}
+			// Respond with valid data
+			res.json(results);
+		}
+	);
+};
+
+//assign material to class
+module.exports.assignMaterial_toClass_Controller = function (req, res, next) {
+	classM.findOneAndUpdate(
+		{ _id: req.params.cid },
+		{
+			$push: {
+				classMaterial: {
+					_id: req.params.mid,
+				},
+			},
+		},
+		{ new: true, upsert: false },
+		function (error, results) {
+			if (error) {
+				return next(error);
+			}
+			// Respond with valid data
+			res.json(results);
+		}
+	);
 };
 
 //Delete Operations
